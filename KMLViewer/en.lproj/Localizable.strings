@@ -1,0 +1,21 @@
+/* 
+  Localizable.strings
+  KMLViewer
+
+  Created by NextBusinessSystem on 12/01/26.
+  Copyright (c) 2012 NextBusinessSystem Co., Ltd. All rights reserved..
+*/
+
+"Map" = "Map";
+"Detail" = "Detail";
+"Standard" = "Standard";
+"Satellite" = "Satellite";
+"Hybrid" = "Hybrid";
+"Open" = "Open";
+"Enter the URL of KML file." = "Enter the URL of KML file.";
+"Please enter the URL" = "Please enter the URL";
+"Failed to open the URL" = "Failed to open the URL";
+"Failed to read the KML file" = "Failed to read the KML file";
+"Error" = "Error";
+"OK" = "OK";
+"Cancel" = "Cancel";
