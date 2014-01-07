@@ -6,8 +6,9 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
+#import <MapKit/MapKit.h>
 #import <zlib.h>
-#import <KML/KML.h>
+#import "KML.h"
 #import "MapViewController.h"
 #import "DetailViewController.h"
 #import "KML+MapKit.h"
@@ -19,15 +20,22 @@
 #import "ZipReadStream.h"
 #import "SVProgressHUD.h"
 
-
 @interface MapViewController ()
-@property (strong, nonatomic) MKUserTrackingBarButtonItem *trackingButton;
-@property (strong, nonatomic) UIBarButtonItem *openButton;
-- (NSString *)inboxDirectory;
-- (void)loadKMLAtURL:(NSURL *)url;
-- (void)didReceiveNewURL:(NSNotification *)notification;
-- (void)userDefaultDidChangeNotification:(NSNotification *)notification;
-- (void)pushDetailViewControllerWithGeometry:(KMLAbstractGeometry *)geometry;
+@property (strong) IBOutlet UISearchBar *placeSearchBar;
+@property (strong) IBOutlet UIView *contentView;
+@property (strong) IBOutlet MKMapView *mapView;
+@property (strong) IBOutlet UITableView *listView;
+@property (strong) IBOutlet UITableView *searchResultView;
+@property (strong) IBOutlet UIToolbar *toolBar;
+@property (strong) IBOutlet UIBarButtonItem *mapTypeButton;
+@property (strong) IBOutlet UISegmentedControl *mapTypeControl;
+@property (strong) IBOutlet UIBarButtonItem *flipButton;
+@property (strong) MKUserTrackingBarButtonItem *trackingButton;
+@property (strong) UIBarButtonItem *openButton;
+
+@property (nonatomic) KMLRoot *kml;
+@property (nonatomic) NSArray *geometries;
+@property (nonatomic) NSArray *filteredGeometries;
 @end
 
 @interface MapViewController (UIAlertViewDelegate) <UIAlertViewDelegate>
@@ -52,26 +60,9 @@
 
 
 
-@implementation MapViewController {
-    KMLRoot *__kml;
-    NSArray *__geometries;
-    NSArray *__filteredGeometries;
-}
+@implementation MapViewController
 
-@synthesize placeSearchBar = __placeSearchBar;
-@synthesize contentView = __contentView;
-@synthesize mapView = __mapView;
-@synthesize listView = __listView;
-@synthesize searchResultView = __searchResultView;
-@synthesize toolBar = __toolBar;
-@synthesize mapTypeButton = __mapTypeButton;
-@synthesize mapTypeControl = __mapTypeControl;
-@synthesize flipButton = __flipButton;
-@synthesize trackingButton = __trackingButton;
-@synthesize openButton = __openButton;
-
-
-#pragma mark - Instance
+#pragma mark - Memory management
 
 - (void)dealloc
 {
@@ -88,21 +79,25 @@
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveNewURL:) name:@"KMLViewerDidReceiveNewURL" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDefaultDidChangeNotification:) name:NSUserDefaultsDidChangeNotification object:nil];
-    
-    __geometries = [NSArray array];
-    __filteredGeometries = [NSArray array];
 
+    // initialize variables
+    self.geometries = @[];
+    self.filteredGeometries = @[];
+
+    // setup segmented control
     self.title = NSLocalizedString(@"Map", nil);
     [self.mapTypeControl setTitle:NSLocalizedString(@"Standard", nil) forSegmentAtIndex:0];
     [self.mapTypeControl setTitle:NSLocalizedString(@"Satellite", nil) forSegmentAtIndex:1];
     [self.mapTypeControl setTitle:NSLocalizedString(@"Hybrid", nil) forSegmentAtIndex:2];
 
-    self.navigationItem.titleView = self.placeSearchBar;  
-    self.navigationItem.titleView.frame = CGRectMake(0, 0, 320, 44);
+    // setup search bar
+    UIView *barWrapper = [[UIView alloc]initWithFrame:self.placeSearchBar.bounds];
+    [barWrapper addSubview:self.placeSearchBar];
+    self.navigationItem.titleView = barWrapper;
     
     // setup the tracking button
     self.trackingButton = [[MKUserTrackingBarButtonItem alloc] initWithMapView:self.mapView];
-    NSMutableArray *items = [NSMutableArray arrayWithArray:self.toolBar.items];
+    NSMutableArray *items = self.toolBar.items.mutableCopy;
     [items insertObject:self.trackingButton atIndex:0];
     self.toolBar.items = items;
     
@@ -163,25 +158,11 @@
 {
     // reset tracking mode
     self.mapView.userTrackingMode = MKUserTrackingModeNone;
-
-    // flip the button
-    [UIView transitionWithView:self.flipButton
-                      duration:0.5f
-                       options:[self.mapView superview] ?  UIViewAnimationOptionTransitionFlipFromLeft : UIViewAnimationOptionTransitionFlipFromRight
-                    animations:^{
-                        if ([self.mapView superview]) {
-                            [self.flipButton setImage:[UIImage imageNamed:@"MapButton"] forState:UIControlStateNormal];
-                        } else {
-                            [self.flipButton setImage:[UIImage imageNamed:@"ListButton"] forState:UIControlStateNormal];
-                        }
-                    } 
-                    completion:nil
-     ];
-
+    
     // flip the content view
     [UIView transitionWithView:self.contentView
                       duration:0.5f
-                       options:[self.mapView superview] ?  UIViewAnimationOptionTransitionFlipFromLeft : UIViewAnimationOptionTransitionFlipFromRight
+                       options:[self.mapView superview] ? UIViewAnimationOptionTransitionFlipFromLeft : UIViewAnimationOptionTransitionFlipFromRight
                     animations:^{
                         if ([self.mapView superview]) {
                             [self.mapView removeFromSuperview];
@@ -194,18 +175,23 @@
                     completion:^(BOOL finished) {
                         if (finished) {
                             // replace toolbar items
+                            NSMutableArray *items = self.toolBar.items.mutableCopy;
                             if (![self.mapView superview]) {
-                                NSMutableArray *items = [NSMutableArray arrayWithArray:self.toolBar.items];
                                 [items removeObject:self.trackingButton];
                                 [items removeObject:self.mapTypeButton];
                                 [items insertObject:self.openButton atIndex:0];
-                                self.toolBar.items = items;
                             } else {
-                                NSMutableArray *items = [NSMutableArray arrayWithArray:self.toolBar.items];
                                 [items removeObject:self.openButton];
                                 [items insertObject:self.trackingButton atIndex:0];
                                 [items insertObject:self.mapTypeButton atIndex:2];
-                                self.toolBar.items = items;
+                            }
+                            self.toolBar.items = items;
+
+                            // update flip button title
+                            if (self.mapView.superview) {
+                                [self.flipButton setTitle:NSLocalizedString(@"List", nil)];
+                            } else {
+                                [self.flipButton setTitle:NSLocalizedString(@"Map", nil)];
                             }
                         }
                     }
@@ -229,8 +215,8 @@
 
 - (NSString *)inboxDirectory
 {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    NSString *documentsDirectory = [paths objectAtIndex:0];
+    NSArray *pathList = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = pathList[0];
     return [documentsDirectory stringByAppendingPathComponent:@"Inbox"];
 }
 
@@ -240,14 +226,13 @@
     self.navigationController.view.userInteractionEnabled = NO;
 
     // remove all annotations and overlays
-    NSMutableArray *annotations = [NSMutableArray array];
-    for (id<MKAnnotation> annotation in self.mapView.annotations) {
-        if ([annotation isKindOfClass:[MKUserLocation class]]) {
-            continue;
+    NSMutableArray *annotations = @[].mutableCopy;
+    [self.mapView.annotations enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+    {
+        if (![obj isKindOfClass:[MKUserLocation class]]) {
+            [annotations addObject:obj];
         }
-        
-        [annotations addObject:annotation];
-    }
+    }];
     [self.mapView removeAnnotations:annotations];
     [self.mapView removeOverlays:self.mapView.overlays];
     
@@ -260,14 +245,14 @@
                                                            queue:nil 
                                                       usingBlock:^(NSNotification *note){
                                                           NSString *description = [[note userInfo] valueForKey:kKMLDescriptionKey];
-                                                          NSLog(@"%@", description);
+                                                          DLog(@"%@", description);
                                                       }
          ];
         
         if ([[[url absoluteString] pathExtension] isEqualToString:@"kmz"]) {
             // inflate zip
             NSString *fileName = [[url absoluteString] lastPathComponent];
-            NSString *filePath;
+            NSString *filePath = nil;
             
             if ([[url absoluteString] hasPrefix:@"file://"]) {
                 // kmz already saved at Inbox
@@ -281,34 +266,38 @@
                 NSError *downloadError;
                 NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:&downloadError];
                 if (downloadError) {
-                    NSLog(@"error, %@", downloadError);
+                    DLog(@"error, %@", downloadError);
                 } else {
                     [data writeToFile:filePath atomically:YES];
                 }
             }
             
             if (filePath) {
-                NSData *data;
+                __block NSMutableData *data;
                 ZipFile *kmzFile;
                 @try {
                     kmzFile = [[ZipFile alloc] initWithFileName:filePath mode:ZipFileModeUnzip];
 
-                    for (FileInZipInfo *info in kmzFile.listFileInZipInfos) {
+                    [kmzFile.listFileInZipInfos enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+                    {
+                        FileInZipInfo *info = (FileInZipInfo *)obj;
+                        
                         NSString *ext = info.name.pathExtension.lowercaseString;
-
+                        
                         if ([ext isEqualToString:@"kml"]) {
                             [kmzFile locateFileInZip:info.name];
-
+                            
                             ZipReadStream *reader= kmzFile.readCurrentFileInZip;
-                            data = [reader readDataOfLength:info.length];
+                            data = [[NSMutableData alloc] initWithLength:info.length];
+                            [reader readDataWithBuffer:data];
                             [reader finishedReading];
-
-                            break;
+                            
+                            *stop = YES;
                         }
-                    }
+                    }];
                 }
                 @catch (NSException *exception) {
-                    NSLog(@"exception, %@", [exception debugDescription]);
+                    DLog(@"exception, %@", [exception debugDescription]);
                 }
                 @finally {
                     if (kmzFile) {
@@ -317,25 +306,25 @@
                 }
 
                 if (data) {
-                    __kml = [KMLParser parseKMLWithData:data];
+                    self.kml = [KMLParser parseKMLWithData:data];
                 }
             }
 
         } else {
-            __kml = [KMLParser parseKMLAtURL:url];
+            self.kml = [KMLParser parseKMLAtURL:url];
         }
         
         // remove KML format error observer
         [[NSNotificationCenter defaultCenter] removeObserver:self name:kKMLInvalidKMLFormatNotification object:nil];
         
-        if (__kml) {
+        if (self.kml) {
             // save curent url for next load
             NSString *urlString = [url absoluteString];
             NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
             [defaults setObject:urlString forKey:@"url"];
             [defaults synchronize];
 
-            __geometries = __kml.geometries;
+            self.geometries = self.kml.geometries;
 
             dispatch_async(dispatch_get_main_queue(), ^{
                 [SVProgressHUD dismiss];
@@ -362,7 +351,7 @@
 
 - (void)didReceiveNewURL:(NSNotification *)notification
 {
-    NSURL *url = (NSURL *)[notification object];
+    NSURL *url = (NSURL *)notification.object;
     
     [self loadKMLAtURL:url];
 }
@@ -376,27 +365,30 @@
         // delete cache files
         NSString *inboxDirectory = [self inboxDirectory];
         NSArray *files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:inboxDirectory error:nil];
-        for (NSString *path in files) {
+        [files enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+        {
+            NSString *path = (NSString *)obj;
             NSString *fullPath = [inboxDirectory stringByAppendingPathComponent:path];
-            NSLog(@"delete, %@", fullPath);
+            DLog(@"delete, %@", fullPath);
             [[NSFileManager defaultManager] removeItemAtPath:fullPath error:nil];
-        }
+        }];
         
         // remove all annotations and overlays
-        NSMutableArray *annotations = [NSMutableArray array];
-        for (id<MKAnnotation> annotation in self.mapView.annotations) {
-            if ([annotation isKindOfClass:[MKUserLocation class]]) {
-                continue;
+        NSMutableArray *annotations = @[].mutableCopy;
+        [self.mapView.annotations enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+        {
+            id<MKAnnotation> annotation = (id<MKAnnotation>)obj;
+
+            if (![annotation isKindOfClass:[MKUserLocation class]]) {
+                [annotations addObject:annotation];
             }
-            
-            [annotations addObject:annotation];
-        }
+        }];
         [self.mapView removeAnnotations:annotations];
         [self.mapView removeOverlays:self.mapView.overlays];
 
-        __kml = nil;
-        __geometries = [NSArray array];
-        __filteredGeometries = [NSArray array];
+        self.kml = nil;
+        self.geometries = @[];
+        self.filteredGeometries = @[];
         
         [self.listView reloadData];
         [self.searchResultView reloadData];
@@ -462,7 +454,7 @@
 - (void)filterPlacemarkForSearchText:(NSString*)searchText
 {
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"placemark.name contains[c] %@", searchText];
-    __filteredGeometries = [__geometries filteredArrayUsingPredicate:predicate];
+    self.filteredGeometries = [self.geometries filteredArrayUsingPredicate:predicate];
 }
 
 - (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar
@@ -487,7 +479,7 @@
     
     [searchBar setShowsCancelButton:NO animated:YES];
     
-    __filteredGeometries = [NSArray array];
+    self.filteredGeometries = @[];
     
     [self.searchResultView reloadData];
     
@@ -524,7 +516,7 @@
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSNumber *mapType = [defaults objectForKey:@"map-type"];
     if (!mapType) {
-        mapType = [NSNumber numberWithInteger:0];
+        mapType = @(0);
     }
     
     self.mapView.mapType = [mapType integerValue];
@@ -533,7 +525,7 @@
 
 - (void)saveMapType
 {
-    NSNumber *mapType = [NSNumber numberWithInteger:self.mapView.mapType];
+    NSNumber *mapType = @(self.mapView.mapType);
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setObject:mapType forKey:@"map-type"];
@@ -542,10 +534,12 @@
 
 - (void)reloadMapView
 {
-    NSMutableArray *annotations = [NSMutableArray array];
-    NSMutableArray *overlays = [NSMutableArray array];
+    NSMutableArray *annotations = @[].mutableCopy;
+    NSMutableArray *overlays = @[].mutableCopy;
     
-    for (KMLAbstractGeometry *geometry in __geometries) {
+    [self.geometries enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+    {
+        KMLAbstractGeometry *geometry = (KMLAbstractGeometry *)obj;
         MKShape *mkShape = [geometry mapkitShape];
         if (mkShape) {
             if ([mkShape conformsToProtocol:@protocol(MKOverlay)]) {
@@ -555,7 +549,7 @@
                 [annotations addObject:mkShape];
             }
         }
-    }
+    }];
     
     [self.mapView addAnnotations:annotations];
     [self.mapView addOverlays:overlays];
@@ -567,9 +561,10 @@
         // Thanks for elegant code!
         // https://gist.github.com/915374
         //
-        MKMapRect zoomRect = MKMapRectNull;
-        for (id <MKAnnotation> annotation in self.mapView.annotations)
+        __block MKMapRect zoomRect = MKMapRectNull;
+        [self.mapView.annotations enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
         {
+            id<MKAnnotation> annotation = (id<MKAnnotation>)obj;
             MKMapPoint annotationPoint = MKMapPointForCoordinate(annotation.coordinate);
             MKMapRect pointRect = MKMapRectMake(annotationPoint.x, annotationPoint.y, 0, 0);
             if (MKMapRectIsNull(zoomRect)) {
@@ -577,7 +572,7 @@
             } else {
                 zoomRect = MKMapRectUnion(zoomRect, pointRect);
             }
-        }
+        }];
         [self.mapView setVisibleMapRect:zoomRect animated:YES];
     });
 }
@@ -629,19 +624,19 @@
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     if (tableView == self.searchResultView) {
-        return __filteredGeometries.count;
+        return self.filteredGeometries.count;
     }
     
-    return __geometries.count;
+    return self.geometries.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     KMLAbstractGeometry *geometry;
     if (tableView == self.searchResultView) {
-        geometry = [__filteredGeometries objectAtIndex:indexPath.row];
+        geometry = self.filteredGeometries[indexPath.row];
     } else {
-        geometry = [__geometries objectAtIndex:indexPath.row];
+        geometry = self.geometries[indexPath.row];
     }
 
     static NSString *CellIdentifier = @"Cell";
@@ -674,8 +669,8 @@
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
     if (tableView == self.listView) {
-        if (__kml) {
-            return __kml.name;
+        if (self.kml) {
+            return self.kml.name;
         }
     }
 
@@ -692,9 +687,9 @@
     
     KMLAbstractGeometry *geometry;
     if (tableView == self.searchResultView) {
-        geometry = [__filteredGeometries objectAtIndex:indexPath.row];
+        geometry = self.filteredGeometries[indexPath.row];
     } else {
-        geometry = [__geometries objectAtIndex:indexPath.row];
+        geometry = self.geometries[indexPath.row];
     }
 
     // cancel searching
@@ -720,9 +715,9 @@
 {
     KMLAbstractGeometry *geometry;
     if (tableView == self.searchResultView) {
-        geometry = [__filteredGeometries objectAtIndex:indexPath.row];
+        geometry = self.filteredGeometries[indexPath.row];
     } else {
-        geometry = [__geometries objectAtIndex:indexPath.row];
+        geometry = self.geometries[indexPath.row];
     }
     
     [self pushDetailViewControllerWithGeometry:geometry];

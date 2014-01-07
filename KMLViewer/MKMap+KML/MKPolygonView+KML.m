@@ -6,13 +6,13 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
-#import <KML/KMLPolygon.h>
-#import <KML/KMLCoordinate.h>
-#import <KML/KMLLinearRing.h>
-#import <KML/KMLPlacemark.h>
-#import <KML/KMLStyle.h>
-#import <KML/KMLLineStyle.h>
-#import <KML/KMLPolyStyle.h>
+#import "KMLPolygon.h"
+#import "KMLCoordinate.h"
+#import "KMLLinearRing.h"
+#import "KMLPlacemark.h"
+#import "KMLStyle.h"
+#import "KMLLineStyle.h"
+#import "KMLPolyStyle.h"
 #import "MKPolygonView+KML.h"
 
 @implementation MKPolygonView (KML)

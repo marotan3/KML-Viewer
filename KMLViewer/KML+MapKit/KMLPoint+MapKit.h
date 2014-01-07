@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <KML/KMLPoint.h>
+#import "KMLPoint.h"
 
 @interface KMLPoint (MapKit)
 

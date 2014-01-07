@@ -6,7 +6,7 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
-#import <KML/KMLElement.h>
+#import "KMLElement.h"
 #import "KMLAbstractGeometry+MapKit.h"
 
 @implementation KMLAbstractGeometry (MapKit)

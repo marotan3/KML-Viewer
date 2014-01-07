@@ -7,22 +7,12 @@
 //
 
 #import <objc/runtime.h>
-#import <KML/KMLAbstractFeature.h>
-#import <KML/KMLPlacemark.h>
+#import "KMLAbstractFeature.h"
+#import "KMLPlacemark.h"
 #import "KMLAbstractGeometry+MapKit.h"
 #import "MKShape+KML.h"
 
 @implementation MKShape (KML)
-
-- (KMLAbstractGeometry *)geometry
-{
-    return objc_getAssociatedObject(self, "kMKShapeGeometryKey");
-}
-
-- (void)setGeometry:(KMLAbstractGeometry *)geometry
-{
-    objc_setAssociatedObject(self, "kMKShapeGeometryKey", geometry, OBJC_ASSOCIATION_RETAIN);
-}
 
 - (NSString *)title
 {
@@ -45,6 +35,22 @@
     
     return nil;
 }
+
+
+#pragma mark - Getter/Setter
+
+- (KMLAbstractGeometry *)geometry
+{
+    return objc_getAssociatedObject(self, "kMKShapeGeometryKey");
+}
+
+- (void)setGeometry:(KMLAbstractGeometry *)geometry
+{
+    objc_setAssociatedObject(self, "kMKShapeGeometryKey", geometry, OBJC_ASSOCIATION_RETAIN);
+}
+
+
+#pragma mark - 
 
 - (MKAnnotationView *)annotationViewForMapView:(MKMapView *)mapView
 {

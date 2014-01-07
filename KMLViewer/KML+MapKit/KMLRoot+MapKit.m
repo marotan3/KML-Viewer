@@ -6,8 +6,8 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
-#import <KML/KMLDocument.h>
-#import <KML/KMLMultiGeometry.h>
+#import "KMLDocument.h"
+#import "KMLMultiGeometry.h"
 #import "KMLRoot+MapKit.h"
 #import "KMLAbstractGeometry+MapKit.h"
 #import "MKAnnotationView+KML.h"
@@ -78,6 +78,5 @@
     
     return geometries;
 }
-
 
 @end

@@ -8,8 +8,8 @@
 
 #import <Foundation/Foundation.h>
 #import <MapKit/MapKit.h>
-#import <KML/KMLAbstractGeometry.h>
-#import <KML/KMLPlacemark.h>
+#import "KMLAbstractGeometry.h"
+#import "KMLPlacemark.h"
 
 @interface KMLAbstractGeometry (MapKit)
 

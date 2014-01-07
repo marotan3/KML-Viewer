@@ -7,11 +7,11 @@
 //
 
 #import <MapKit/MapKit.h>
-#import <KML/KMLCoordinate.h>
-#import <KML/KMLPlacemark.h>
-#import <KML/KMLStyle.h>
-#import <KML/KMLIconStyle.h>
-#import <KML/KMLIcon.h>
+#import "KMLCoordinate.h"
+#import "KMLPlacemark.h"
+#import "KMLStyle.h"
+#import "KMLIconStyle.h"
+#import "KMLIcon.h"
 #import "KMLPlacemark+MapKit.h"
 #import "KMLAbstractGeometry+MapKit.h"
 #import "MKShape+KML.h"

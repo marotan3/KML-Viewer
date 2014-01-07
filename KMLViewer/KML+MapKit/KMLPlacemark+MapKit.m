@@ -7,10 +7,10 @@
 //
 
 #import <objc/runtime.h>
-#import <KML/KMLStyle.h>
-#import <KML/KMLIconStyle.h>
-#import <KML/KMLIcon.h>
-#import <KML/KMLMultiGeometry.h>
+#import "KMLStyle.h"
+#import "KMLIconStyle.h"
+#import "KMLIcon.h"
+#import "KMLMultiGeometry.h"
 #import "KMLPlacemark+MapKit.h"
 
 @implementation KMLPlacemark (MapKit)
@@ -43,7 +43,7 @@
             NSURLRequest *request = [NSURLRequest requestWithURL:url];
             NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:&error];
             if (error) {
-                NSLog(@"error, %@", [error localizedDescription]);
+                DLog(@"error, %@", [error localizedDescription]);
                 
                 // Set dot image
                 image = [UIImage imageNamed:@"dot.png"];

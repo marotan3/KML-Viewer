@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <KML/KMLLineString.h>
+#import "KMLLineString.h"
 
 @interface KMLLineString (MapKit)
 

@@ -6,15 +6,20 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
+#import <MapKit/MapKit.h>
 #import "DetailViewController.h"
 #import "KMLAbstractGeometry+MapKit.h"
 #import "MKShape+KML.h"
 
+@interface DetailViewController ()
+@property (weak) IBOutlet UIWebView *webView;
+@end
+
+@interface DetailViewController (UIWebViewDelegate) <UIWebViewDelegate>
+@end
+
+
 @implementation DetailViewController
-
-@synthesize geometry = __geometry;
-@synthesize webView = __webView;
-
 
 #pragma mark - View lifecycle
 
@@ -55,6 +60,12 @@
     
     [self.webView loadHTMLString:htmlString baseURL:nil];
 }
+
+@end
+
+
+#pragma mark -
+@implementation DetailViewController (UIWebViewDelegate)
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
 {

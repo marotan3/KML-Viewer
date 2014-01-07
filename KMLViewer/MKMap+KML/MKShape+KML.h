@@ -8,12 +8,11 @@
 
 #import <Foundation/Foundation.h>
 #import <MapKit/MapKit.h>
-#import <KML/KMLPlacemark.h>
+#import "KMLPlacemark.h"
 
 @interface MKShape (KML)
 
-- (KMLAbstractGeometry *)geometry;
-- (void)setGeometry:(KMLAbstractGeometry *)geometry;
+@property (nonatomic) KMLAbstractGeometry *geometry;
 
 - (MKAnnotationView *)annotationViewForMapView:(MKMapView *)mapView;
 - (MKOverlayView *)overlayViewForMapView:(MKMapView *)mapView;

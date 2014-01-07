@@ -7,12 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <MapKit/MapKit.h>
-#import <KML/KMLAbstractGeometry.h>
+#import "KMLAbstractGeometry.h"
 
 @interface DetailViewController : UIViewController
 
-@property (strong, nonatomic) KMLAbstractGeometry *geometry;
-@property (weak, nonatomic) IBOutlet UIWebView *webView;
+@property (strong) KMLAbstractGeometry *geometry;
 
 @end

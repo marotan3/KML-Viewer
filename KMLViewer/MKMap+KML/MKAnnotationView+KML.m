@@ -6,9 +6,9 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
-#import <KML/KMLCoordinate.h>
-#import <KML/KMLPoint.h>
-#import <KML/KMLPlacemark.h>
+#import "KMLCoordinate.h"
+#import "KMLPoint.h"
+#import "KMLPlacemark.h"
 #import "MKAnnotationView+KML.h"
 
 @implementation MKAnnotationView (KML)

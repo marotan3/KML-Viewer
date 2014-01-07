@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <KML/KMLPolygon.h>
+#import "KMLPolygon.h"
 
 @interface KMLPolygon (MapKit)
 

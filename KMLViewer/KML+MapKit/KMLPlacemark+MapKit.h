@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <MapKit/MapKit.h>
-#import <KML/KMLPlacemark.h>
+#import "KMLPlacemark.h"
 
 @interface KMLPlacemark (MapKit)
 

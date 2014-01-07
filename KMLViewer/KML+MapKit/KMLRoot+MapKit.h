@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <MapKit/MapKit.h>
-#import <KML/KMLRoot.h>
+#import "KMLRoot.h"
 
 @interface KMLRoot (MapKit)
 

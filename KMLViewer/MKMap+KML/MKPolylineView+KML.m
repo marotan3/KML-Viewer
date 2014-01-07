@@ -6,11 +6,11 @@
 //  Copyright (c) 2011 NextBusinessSystem Co., Ltd. All rights reserved.
 //
 
-#import <KML/KMLCoordinate.h>
-#import <KML/KMLPlacemark.h>
-#import <KML/KMLStyle.h>
-#import <KML/KMLLineString.h>
-#import <KML/KMLLineStyle.h>
+#import "KMLCoordinate.h"
+#import "KMLPlacemark.h"
+#import "KMLStyle.h"
+#import "KMLLineString.h"
+#import "KMLLineStyle.h"
 #import "MKPolylineView+KML.h"
 #import "MKOverlayView+KML.h"
 
