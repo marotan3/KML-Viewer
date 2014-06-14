@@ -43,8 +43,11 @@
     KMLPlacemark *placemark = self.placemark;
     
     KMLLineStyle *lineStyle = [KMLLineStyle new];
-    
-    KMLStyle *style = placemark.style;
+
+    KMLStyle *style = [placemark styleForState:KMLStyleStateNormal];
+    if (!style) {
+        style = placemark.style;
+    }
     if (style) {
         if (style.lineStyle) {
             lineStyle = style.lineStyle;

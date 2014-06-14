@@ -17,7 +17,11 @@
 
 - (BOOL)hasIcon
 {
-    KMLStyle *style = self.style;
+
+    KMLStyle *style = [self styleForState:KMLStyleStateNormal];
+    if (!style) {
+        style = self.style;
+    }
     if (style
         && style.iconStyle
         && style.iconStyle.icon
@@ -32,7 +36,10 @@
 {
     UIImage *image = objc_getAssociatedObject(self, "kKMLPlacemarkIconImageKey");
     if (!image) {
-        KMLStyle *style = self.style;
+        KMLStyle *style = [self styleForState:KMLStyleStateNormal];
+        if (!style) {
+            style = self.style;
+        }
         if (style
             && style.iconStyle
             && style.iconStyle.icon

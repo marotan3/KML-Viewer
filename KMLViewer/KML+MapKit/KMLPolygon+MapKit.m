@@ -48,8 +48,11 @@
 
     KMLPolyStyle *polyStyle = [KMLPolyStyle new];
     KMLLineStyle *lineStyle = [KMLLineStyle new];
-    
-    KMLStyle *style = placemark.style;
+
+    KMLStyle *style = [placemark styleForState:KMLStyleStateNormal];
+    if (!style) {
+        style = placemark.style;
+    }
     if (style) {
         if (style.polyStyle) {
             polyStyle = style.polyStyle;
