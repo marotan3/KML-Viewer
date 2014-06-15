@@ -31,8 +31,30 @@
             coors[i] = CLLocationCoordinate2DMake(coordinate.latitude, coordinate.longitude);
             i++;
         }
-        
-        MKPolygon *polygon = [MKPolygon polygonWithCoordinates:coors count:outerCoordinates.count];
+
+        // inner boundaries:
+        NSMutableArray *innerBoundariesPolygons = [NSMutableArray new];
+        for (KMLLinearRing *innerBoundary in self.innerBoundaryIsList) {
+            NSArray *innerCoordinates = innerBoundary.coordinates;
+            if (innerCoordinates.count > 0) {
+                CLLocationCoordinate2D innerCoors[innerCoordinates.count];
+                int cnt = 0;
+                for (KMLCoordinate *coordinate in innerCoordinates) {
+                    innerCoors[cnt] = CLLocationCoordinate2DMake(coordinate.latitude, coordinate.longitude);
+                    cnt++;
+                }
+                MKPolygon *innerPolygon = [MKPolygon polygonWithCoordinates:innerCoors count:innerCoordinates.count];
+                [innerBoundariesPolygons addObject:innerPolygon];
+            }
+        }
+
+        MKPolygon *polygon;
+        if ([innerBoundariesPolygons count] > 0) {
+            polygon = [MKPolygon polygonWithCoordinates:coors count:outerCoordinates.count interiorPolygons:innerBoundariesPolygons];
+        }
+        else {
+            polygon = [MKPolygon polygonWithCoordinates:coors count:outerCoordinates.count];
+        }
         polygon.geometry = self;
         return polygon;
     }
